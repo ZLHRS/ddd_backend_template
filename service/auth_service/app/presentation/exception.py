@@ -4,7 +4,6 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.exceptions import (
-    AlreadyLoggedInError,
     DatabaseError,
     InvalidCredentialsError,
     InvalidTokenError,
@@ -40,10 +39,6 @@ async def _token_reuse_handler(request: Request, exc: TokenReuseError) -> JSONRe
     return JSONResponse(status_code=401, content={"detail": str(exc)})
 
 
-async def _already_logged_in_handler(request: Request, exc: AlreadyLoggedInError) -> JSONResponse:
-    return JSONResponse(status_code=409, content={"detail": str(exc)})
-
-
 async def _database_error_handler(request: Request, exc: DatabaseError) -> JSONResponse:
     logger.error("Database error on %s %s", request.method, request.url.path, exc_info=True)
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
@@ -60,6 +55,5 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(InvalidTokenError, _invalid_token_handler)
     app.add_exception_handler(TokenExpiredError, _token_expired_handler)
     app.add_exception_handler(TokenReuseError, _token_reuse_handler)
-    app.add_exception_handler(AlreadyLoggedInError, _already_logged_in_handler)
     app.add_exception_handler(DatabaseError, _database_error_handler)
     app.add_exception_handler(Exception, _unexpected_error_handler)

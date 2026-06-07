@@ -28,7 +28,3 @@ class TokenExpiredError(AppError):
 
 class TokenReuseError(AppError):
     pass
-
-
-class AlreadyLoggedInError(AppError):
-    pass

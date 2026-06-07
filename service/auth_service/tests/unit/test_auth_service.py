@@ -10,7 +10,6 @@ from app.config import AuthConfig
 from app.domain.entity.session_entity import SessionEntity
 from app.domain.entity.user_entity import UserEntity
 from app.exceptions import (
-    AlreadyLoggedInError,
     DuplicateEntryError,
     InvalidCredentialsError,
     InvalidTokenError,
@@ -209,7 +208,7 @@ async def test_login_success_returns_tokens(security):
     assert tokens.refresh_token
 
 
-async def test_login_already_logged_in_raises(security):
+async def test_login_with_active_session_revokes_old_and_succeeds(security):
     hashed = security.hash_password("secret")
     user = UserEntity(
         id=uuid.uuid4(),
@@ -219,8 +218,10 @@ async def test_login_already_logged_in_raises(security):
         created_at=datetime.now(UTC),
     )
     service = _make_service(user=user, security=security, has_active_session=True)
-    with pytest.raises(AlreadyLoggedInError):
-        await service.login(LoginCommand(email="u@example.com", password="secret"), _CONTEXT)
+    tokens = await service.login(LoginCommand(email="u@example.com", password="secret"), _CONTEXT)
+    assert tokens.access_token
+    assert tokens.refresh_token
+    assert user.id in service._sessions.revoked_user_ids
 
 
 async def test_refresh_token_not_in_db(security):
